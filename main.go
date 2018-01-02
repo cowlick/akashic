@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"github.com/blang/semver"
+	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/urfave/cli"
 	"os"
 	"os/exec"
@@ -28,10 +31,26 @@ func SubCommandPath(subcommand string) (string, error) {
 	return exec.LookPath(subcommand)
 }
 
+func SelfUpdate(version string) error {
+
+	previous := semver.MustParse(version)
+	latest, err := selfupdate.UpdateSelf(previous, "cowlick/akashic-cli")
+	if err != nil {
+		return err
+	}
+	if latest.Version.Equals(previous) {
+		fmt.Println("Current binary is the latest version", version)
+	} else {
+		fmt.Println("Successfully updated to version", latest.Version)
+	}
+	return nil
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "akashic"
 	app.Usage = "Command-line utility for Akashic Engine"
+	app.Version = "0.0.1"
 
 	app.Before = func(c *cli.Context) error {
 		args := c.Args()
@@ -63,6 +82,16 @@ func main() {
 		})
 
 		return nil
+	}
+
+	app.Commands = []cli.Command{
+		{
+			Name:  "selfupdate",
+			Usage: "Try to update self via GitHub",
+			Action: func(c *cli.Context) error {
+				return SelfUpdate(app.Version)
+			},
+		},
 	}
 
 	app.Run(os.Args)
