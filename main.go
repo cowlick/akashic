@@ -31,6 +31,47 @@ func SubCommandPath(subcommand string) (string, error) {
 	return exec.LookPath(subcommand)
 }
 
+var packages = []string{
+	"@akashic/akashic-cli-commons",
+	"@akashic/akashic-cli-init",
+	"@akashic/akashic-cli-scan",
+	"@akashic/akashic-cli-modify",
+	"@akashic/akashic-cli-update",
+	"@akashic/akashic-cli-install",
+	"@akashic/akashic-cli-uninstall",
+	"@akashic/akashic-cli-config",
+	"@akashic/akashic-cli-export-html",
+	"@akashic/akashic-cli-export-zip",
+	"@akashic/akashic-cli-stat",
+}
+
+func Bootstrap(global bool) error {
+
+	for _, pkg := range packages {
+
+		path, err := exec.LookPath("npm")
+		if err != nil {
+			return err
+		}
+
+		args := pkg
+		if global {
+			args = "-g " + args
+		}
+
+		cmd := exec.Command(path + " i", args)
+		cmd.Stdout = os.Stdout
+		cmd.Stdin = os.Stdin
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func SelfUpdate(version string) error {
 
 	previous := semver.MustParse(version)
@@ -85,6 +126,18 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		{
+			Name:  "bootstrap",
+			Usage: "Try to install official akashic-cli-*",
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name: "global, g",
+				},
+			},
+			Action: func(c *cli.Context) error {
+				return Bootstrap(c.Bool("global"))
+			},
+		},
 		{
 			Name:  "selfupdate",
 			Usage: "Try to update self via GitHub",
