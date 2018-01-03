@@ -130,7 +130,12 @@ func PackageVersion(pkg string) (*CommandPackageInfo, error) {
 		return nil, err
 	}
 
-	return &CommandPackageInfo{semver.MustParse(data.Version), path.Type}, nil
+	version, err := semver.Parse(data.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CommandPackageInfo{version, path.Type}, nil
 }
 
 type DistTags struct {
@@ -162,7 +167,12 @@ func UpdatePackage() error {
 			return err
 		}
 
-		if previous.Version.LT(semver.MustParse(tags.Latest)) {
+		latest, err := semver.Parse(tags.Latest)
+		if err != nil {
+			return err
+		}
+
+		if previous.Version.LT(latest) {
 			global := false
 			if previous.Type == GLOBAL {
 				global = true
@@ -179,7 +189,10 @@ func UpdatePackage() error {
 
 func SelfUpdate(version string) error {
 
-	previous := semver.MustParse(version)
+	previous, err := semver.Parse(version)
+	if err != nil {
+		return err
+	}
 	latest, err := selfupdate.UpdateSelf(previous, "cowlick/akashic")
 	if err != nil {
 		return err
@@ -293,7 +306,11 @@ func main() {
 			Name:  "selfupdate",
 			Usage: "Try to update self via GitHub",
 			Action: func(c *cli.Context) error {
-				return SelfUpdate(app.Version)
+				err := SelfUpdate(app.Version)
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
 			},
 		},
 		{
