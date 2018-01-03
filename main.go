@@ -229,7 +229,11 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				return Bootstrap(c.Bool("global"))
+				err := Bootstrap(c.Bool("global"))
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
 			},
 		},
 		{
