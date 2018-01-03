@@ -199,6 +199,20 @@ func Export(args cli.Args) error {
 	return cmd.Run()
 }
 
+func Link(args cli.Args) error {
+
+	path, err := FindCommandPath("akashic-cli-install")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(path.Value, strings.Join(append(args, "-l"), " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "akashic"
@@ -278,6 +292,16 @@ func main() {
 			Usage:       "akashic export [format] [options]",
 			Action: func(c *cli.Context) error {
 				err := Export(c.Args())
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
+			},
+		},
+		{
+			Name: "link",
+			Action: func(c *cli.Context) error {
+				err := Link(c.Args())
 				if err != nil {
 					fmt.Println(err)
 				}
