@@ -28,7 +28,7 @@ type CommandPath struct {
 	Value string
 }
 
-func FindCommandPath(command string) (*CommandPath, error) {
+func findCommandPath(command string) (*CommandPath, error) {
 
 	localPath, err := filepath.Abs(".")
 	if err != nil {
@@ -70,7 +70,7 @@ var packages = []string{
 	"@akashic/akashic-cli-stat",
 }
 
-func NpmInstall(pkg string, global bool) error {
+func npmInstall(pkg string, global bool) error {
 	var cmd *exec.Cmd
 	if global {
 		cmd = exec.Command("npm", "i", "-g", pkg)
@@ -83,11 +83,11 @@ func NpmInstall(pkg string, global bool) error {
 	return cmd.Run()
 }
 
-func Bootstrap(global bool) error {
+func bootstrap(global bool) error {
 
 	for _, pkg := range packages {
 
-		err := NpmInstall(pkg, global)
+		err := npmInstall(pkg, global)
 		if err != nil {
 			return err
 		}
@@ -105,9 +105,9 @@ type CommandPackageInfo struct {
 	Type    CommandType
 }
 
-func PackageVersion(pkg string) (*CommandPackageInfo, error) {
+func packageVersion(pkg string) (*CommandPackageInfo, error) {
 
-	path, err := FindCommandPath(strings.Split(pkg, "/")[1])
+	path, err := findCommandPath(strings.Split(pkg, "/")[1])
 	if err != nil {
 		return nil, err
 	}
@@ -142,11 +142,11 @@ type DistTags struct {
 	Latest string `json:"latest"`
 }
 
-func UpdatePackage() error {
+func updatePackage() error {
 
 	for _, pkg := range packages {
 
-		previous, err := PackageVersion(pkg)
+		previous, err := packageVersion(pkg)
 		if err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func UpdatePackage() error {
 			if previous.Type == GLOBAL {
 				global = true
 			}
-			err = NpmInstall(pkg, global)
+			err = npmInstall(pkg, global)
 			if err != nil {
 				return err
 			}
@@ -187,7 +187,7 @@ func UpdatePackage() error {
 	return nil
 }
 
-func SelfUpdate(version string) error {
+func selfUpdate(version string) error {
 
 	previous, err := semver.Parse(version)
 	if err != nil {
@@ -205,12 +205,12 @@ func SelfUpdate(version string) error {
 	return nil
 }
 
-func Export(args cli.Args) error {
+func export(args cli.Args) error {
 	if len(args) <= 0 {
 		return errors.New("Usage: akashic export [format] [options]")
 	}
 
-	path, err := FindCommandPath("akashic-cli-export-" + args.First())
+	path, err := findCommandPath("akashic-cli-export-" + args.First())
 	if err != nil {
 		return err
 	}
@@ -222,9 +222,9 @@ func Export(args cli.Args) error {
 	return cmd.Run()
 }
 
-func Link(args cli.Args) error {
+func link(args cli.Args) error {
 
-	path, err := FindCommandPath("akashic-cli-install")
+	path, err := findCommandPath("akashic-cli-install")
 	if err != nil {
 		return err
 	}
@@ -255,7 +255,7 @@ func main() {
 			}
 		}
 
-		path, err := FindCommandPath(app.Name + "-cli-" + subcommand)
+		path, err := findCommandPath(app.Name + "-cli-" + subcommand)
 		if err != nil {
 			return err
 		}
@@ -284,7 +284,7 @@ func main() {
 				},
 			},
 			Action: func(c *cli.Context) error {
-				err := Bootstrap(c.Bool("global"))
+				err := bootstrap(c.Bool("global"))
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -295,7 +295,7 @@ func main() {
 			Name:  "upgrade",
 			Usage: "Try to update official akashic-cli-*",
 			Action: func(c *cli.Context) error {
-				err := UpdatePackage()
+				err := updatePackage()
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -306,7 +306,7 @@ func main() {
 			Name:  "selfupdate",
 			Usage: "Try to update self via GitHub",
 			Action: func(c *cli.Context) error {
-				err := SelfUpdate(app.Version)
+				err := selfUpdate(app.Version)
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -318,7 +318,7 @@ func main() {
 			Description: "Export an Akashic game",
 			Usage:       "akashic export [format] [options]",
 			Action: func(c *cli.Context) error {
-				err := Export(c.Args())
+				err := export(c.Args())
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -328,7 +328,7 @@ func main() {
 		{
 			Name: "link",
 			Action: func(c *cli.Context) error {
-				err := Link(c.Args())
+				err := link(c.Args())
 				if err != nil {
 					fmt.Println(err)
 				}
