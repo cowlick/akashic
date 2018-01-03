@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/blang/semver"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
@@ -181,6 +182,23 @@ func SelfUpdate(version string) error {
 	return nil
 }
 
+func Export(args cli.Args) error {
+	if len(args) <= 0 {
+		return errors.New("Usage: akashic export [format] [options]")
+	}
+
+	path, err := FindCommandPath("akashic-cli-export-" + args.First())
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(path.Value, strings.Join(os.Args[2:], " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "akashic"
@@ -252,6 +270,18 @@ func main() {
 			Usage: "Try to update self via GitHub",
 			Action: func(c *cli.Context) error {
 				return SelfUpdate(app.Version)
+			},
+		},
+		{
+			Name:        "export",
+			Description: "Export an Akashic game",
+			Usage:       "akashic export [format] [options]",
+			Action: func(c *cli.Context) error {
+				err := Export(c.Args())
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
 			},
 		},
 	}
