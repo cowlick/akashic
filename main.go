@@ -170,7 +170,7 @@ func UpdatePackage() error {
 func SelfUpdate(version string) error {
 
 	previous := semver.MustParse(version)
-	latest, err := selfupdate.UpdateSelf(previous, "cowlick/akashic-cli")
+	latest, err := selfupdate.UpdateSelf(previous, "cowlick/akashic")
 	if err != nil {
 		return err
 	}
