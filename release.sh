@@ -5,7 +5,7 @@ set -e
 executable=akashic
 
 rm -rf release
-gox -verbose -output "release/${executable}_{{.OS}}_{{.Arch}}"
+gox -verbose -output "release/${executable}_{{.OS}}_{{.Arch}}" ./$executable
 cd release
 for bin in *; do
   if [[ "$bin" == *windows* ]]; then
