@@ -19,3 +19,6 @@
 # End of https://www.gitignore.io/api/go
 
 release/
+node_modules/
+package-lock.json
+package.json

@@ -63,13 +63,13 @@ var packages = []string{
 	"@akashic/akashic-cli-stat",
 }
 
-func NpmInstall(npm string, global bool, pkg string) error {
-	args := pkg
+func NpmInstall(pkg string, global bool) error {
+	var cmd *exec.Cmd
 	if global {
-		args = "-g " + args
+		cmd = exec.Command("npm", "i", "-g", pkg)
+	} else {
+		cmd = exec.Command("npm", "i", "-D", pkg)
 	}
-
-	cmd := exec.Command(npm+" i", args)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -78,14 +78,9 @@ func NpmInstall(npm string, global bool, pkg string) error {
 
 func Bootstrap(global bool) error {
 
-	path, err := exec.LookPath("npm")
-	if err != nil {
-		return err
-	}
-
 	for _, pkg := range packages {
 
-		err = NpmInstall(path, global, pkg)
+		err := NpmInstall(pkg, global)
 		if err != nil {
 			return err
 		}
@@ -137,11 +132,6 @@ type DistTags struct {
 
 func UpdatePackage() error {
 
-	path, err := exec.LookPath("npm")
-	if err != nil {
-		return err
-	}
-
 	for _, pkg := range packages {
 
 		previous, err := PackageVersion(pkg)
@@ -170,7 +160,7 @@ func UpdatePackage() error {
 			if previous.Type == GLOBAL {
 				global = true
 			}
-			err = NpmInstall(path, global, pkg)
+			err = NpmInstall(pkg, global)
 			if err != nil {
 				return err
 			}
@@ -247,7 +237,7 @@ func main() {
 			},
 		},
 		{
-			Name:  "update",
+			Name:  "upgrade",
 			Usage: "Try to update official akashic-cli-*",
 			Action: func(c *cli.Context) error {
 				return UpdatePackage()
