@@ -30,11 +30,21 @@ type CommandPath struct {
 
 func FindCommandPath(command string) (*CommandPath, error) {
 
-	currentPath, err := filepath.Abs(".")
+	localPath, err := filepath.Abs(".")
 	if err != nil {
 		return nil, err
 	}
-	path := filepath.Join(currentPath, "node_modules/.bin", command)
+	path := filepath.Join(localPath, "node_modules/.bin", command)
+	_, err = os.Stat(path)
+	if err == nil {
+		return &CommandPath{LOCAL, path}, nil
+	}
+
+	currentPath, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	path = filepath.Join(filepath.Dir(currentPath), command)
 	_, err = os.Stat(path)
 	if err == nil {
 		return &CommandPath{LOCAL, path}, nil
