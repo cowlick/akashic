@@ -34,12 +34,9 @@ func FindCommandPath(command string) (*CommandPath, error) {
 		return nil, err
 	}
 	path := filepath.Join(currentPath, "node_modules/.bin", command)
-	files, err := filepath.Glob(path)
-	if err != nil {
-		return nil, err
-	}
-	if len(files) != 0 {
-		return &CommandPath{LOCAL, files[0]}, nil
+	_, err = os.Stat(path)
+	if err == nil {
+		return &CommandPath{LOCAL, path}, nil
 	}
 
 	globalPath, err := exec.LookPath(command)
@@ -50,7 +47,6 @@ func FindCommandPath(command string) (*CommandPath, error) {
 }
 
 var packages = []string{
-	"@akashic/akashic-cli-commons",
 	"@akashic/akashic-cli-init",
 	"@akashic/akashic-cli-scan",
 	"@akashic/akashic-cli-modify",
@@ -240,7 +236,11 @@ func main() {
 			Name:  "upgrade",
 			Usage: "Try to update official akashic-cli-*",
 			Action: func(c *cli.Context) error {
-				return UpdatePackage()
+				err := UpdatePackage()
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
 			},
 		},
 		{
