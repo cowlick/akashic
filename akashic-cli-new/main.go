@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -55,17 +57,40 @@ func copyFiles(targetDir string, outDir string) error {
 				return err
 			}
 
-			if info.IsDir() {
-				return nil
-			}
-
 			rel, err := filepath.Rel(targetDir, path)
 			if err != nil {
 				return err
 			}
+			outPath := filepath.Join(outDir, rel)
 
-			return copyFile(path, filepath.Join(outDir, rel))
+			if info.IsDir() {
+				if outPath == outDir {
+					return nil
+				}
+				return os.Mkdir(outPath, os.ModeDir)
+			}
+
+			return copyFile(path, outPath)
 		})
+}
+
+type Template struct {
+	Path     string `json:"path"`
+	GameJson string `json:"gameJson"`
+}
+
+func readTemplateInfo(packageDir string) (*Template, error) {
+	bytes, err := ioutil.ReadFile(filepath.Join(packageDir, "template.json"))
+	if err != nil {
+		return nil, err
+	}
+	var template Template
+	err = json.Unmarshal(bytes, &template)
+	if err != nil {
+		return nil, err
+	}
+
+	return &template, nil
 }
 
 func generate(pkg string, install bool) error {
@@ -81,12 +106,17 @@ func generate(pkg string, install bool) error {
 		return err
 	}
 
+	template, err := readTemplateInfo(packageDir)
+	if err != nil {
+		return err
+	}
+
 	current, err := filepath.Abs(".")
 	if err != nil {
 		return err
 	}
 
-	return copyFiles(packageDir, current)
+	return copyFiles(filepath.Join(packageDir, template.Path), current)
 }
 
 func main() {
