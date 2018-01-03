@@ -195,13 +195,11 @@ func SelfUpdate(version string) error {
 	return nil
 }
 
-var version string
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "akashic"
 	app.Usage = "Command-line utility for Akashic Engine"
-	app.Version = version
+	app.Version = "0.0.1"
 
 	app.Before = func(c *cli.Context) error {
 		args := c.Args()
