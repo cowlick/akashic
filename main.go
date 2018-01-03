@@ -1,34 +1,52 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/blang/semver"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/urfave/cli"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-func SubCommandPath(subcommand string) (string, error) {
+type CommandType int
 
-	// local command
+const (
+	LOCAL CommandType = iota
+	GLOBAL
+)
+
+type CommandPath struct {
+	Type  CommandType
+	Value string
+}
+
+func FindCommandPath(command string) (*CommandPath, error) {
+
 	currentPath, err := filepath.Abs(".")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	path := filepath.Join(currentPath, "node_modules/.bin", subcommand)
+	path := filepath.Join(currentPath, "node_modules/.bin", command)
 	files, err := filepath.Glob(path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(files) != 0 {
-		return files[0], nil
+		return &CommandPath{LOCAL, files[0]}, nil
 	}
 
-	// global command
-	return exec.LookPath(subcommand)
+	globalPath, err := exec.LookPath(command)
+	if err != nil {
+		return nil, err
+	}
+	return &CommandPath{GLOBAL, globalPath}, nil
 }
 
 var packages = []string{
@@ -45,27 +63,117 @@ var packages = []string{
 	"@akashic/akashic-cli-stat",
 }
 
+func NpmInstall(npm string, global bool, pkg string) error {
+	args := pkg
+	if global {
+		args = "-g " + args
+	}
+
+	cmd := exec.Command(npm+" i", args)
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func Bootstrap(global bool) error {
+
+	path, err := exec.LookPath("npm")
+	if err != nil {
+		return err
+	}
 
 	for _, pkg := range packages {
 
-		path, err := exec.LookPath("npm")
+		err = NpmInstall(path, global, pkg)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type Package struct {
+	Version string `json:"version"`
+}
+
+type CommandPackageInfo struct {
+	Version semver.Version
+	Type    CommandType
+}
+
+func PackageVersion(pkg string) (*CommandPackageInfo, error) {
+
+	path, err := FindCommandPath(strings.Split(pkg, "/")[1])
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonPath string
+	if path.Type == LOCAL {
+		jsonPath = filepath.Join(filepath.Dir(path.Value), "..", pkg, "package.json")
+	} else {
+		jsonPath = filepath.Join(filepath.Dir(path.Value), "node_modules", pkg, "package.json")
+	}
+
+	bytes, err := ioutil.ReadFile(jsonPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var data Package
+	err = json.Unmarshal(bytes, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CommandPackageInfo{semver.MustParse(data.Version), path.Type}, nil
+}
+
+type DistTags struct {
+	Latest string `json:"latest"`
+}
+
+func UpdatePackage() error {
+
+	path, err := exec.LookPath("npm")
+	if err != nil {
+		return err
+	}
+
+	for _, pkg := range packages {
+
+		previous, err := PackageVersion(pkg)
 		if err != nil {
 			return err
 		}
 
-		args := pkg
-		if global {
-			args = "-g " + args
-		}
-
-		cmd := exec.Command(path + " i", args)
-		cmd.Stdout = os.Stdout
-		cmd.Stdin = os.Stdin
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
+		resp, err := http.Get(fmt.Sprintf("https://registry.npmjs.org/-/package/%s/dist-tags", url.PathEscape(pkg)))
 		if err != nil {
 			return err
+		}
+		defer resp.Body.Close()
+		jsonData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		var tags DistTags
+		err = json.Unmarshal(jsonData, &tags)
+		if err != nil {
+			return err
+		}
+
+		if previous.Version.LT(semver.MustParse(tags.Latest)) {
+			global := false
+			if previous.Type == GLOBAL {
+				global = true
+			}
+			err = NpmInstall(path, global, pkg)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -106,7 +214,7 @@ func main() {
 			}
 		}
 
-		path, err := SubCommandPath(app.Name + "-cli-" + subcommand)
+		path, err := FindCommandPath(app.Name + "-cli-" + subcommand)
 		if err != nil {
 			return err
 		}
@@ -114,7 +222,7 @@ func main() {
 		app.Commands = append(app.Commands, cli.Command{
 			Name: subcommand,
 			Action: func(c *cli.Context) error {
-				cmd := exec.Command(path, strings.Join(os.Args[2:], " "))
+				cmd := exec.Command(path.Value, strings.Join(os.Args[2:], " "))
 				cmd.Stdout = os.Stdout
 				cmd.Stdin = os.Stdin
 				cmd.Stderr = os.Stderr
@@ -136,6 +244,13 @@ func main() {
 			},
 			Action: func(c *cli.Context) error {
 				return Bootstrap(c.Bool("global"))
+			},
+		},
+		{
+			Name:  "update",
+			Usage: "Try to update official akashic-cli-*",
+			Action: func(c *cli.Context) error {
+				return UpdatePackage()
 			},
 		},
 		{
