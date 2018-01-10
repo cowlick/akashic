@@ -218,17 +218,17 @@ func selfUpdate(version string) error {
 	return nil
 }
 
-func export(args cli.Args) error {
+func export(baseName string, args cli.Args) error {
 	if len(args) <= 0 {
 		return errors.New("Usage: akashic export [format] [options]")
 	}
 
-	path, err := findCommandPath("akashic-cli-export-" + args.First())
+	path, err := findAkashicCommandPath(baseName, "export-" + args.First())
 	if err != nil {
 		return err
 	}
 
-	cmd := exec.Command(path.Value, strings.Join(os.Args[2:], " "))
+	cmd := exec.Command(path, strings.Join(os.Args[2:], " "))
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -331,7 +331,7 @@ func main() {
 			Description: "Export an Akashic game",
 			Usage:       "akashic export [format] [options]",
 			Action: func(c *cli.Context) error {
-				err := export(c.Args())
+				err := export(app.Name, c.Args())
 				if err != nil {
 					fmt.Println(err)
 				}
