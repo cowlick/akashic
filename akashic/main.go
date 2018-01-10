@@ -57,6 +57,19 @@ func findCommandPath(command string) (*CommandPath, error) {
 	return &CommandPath{GLOBAL, globalPath}, nil
 }
 
+func findAkashicCommandPath(baseName string, subcommand string) (string, error) {
+	path, err := findCommandPath(baseName + "-" + subcommand)
+	if err == nil {
+		return path.Value, nil
+	}
+
+	path, err = findCommandPath(baseName + "-cli-" + subcommand)
+	if err != nil {
+		return "", errors.New("akashic command not found: " + subcommand)
+	}
+	return path.Value, nil
+}
+
 var packages = []string{
 	"@akashic/akashic-cli-init",
 	"@akashic/akashic-cli-scan",
@@ -255,7 +268,7 @@ func main() {
 			}
 		}
 
-		path, err := findCommandPath(app.Name + "-cli-" + subcommand)
+		path, err := findAkashicCommandPath(app.Name, subcommand)
 		if err != nil {
 			return err
 		}
@@ -263,7 +276,7 @@ func main() {
 		app.Commands = append(app.Commands, cli.Command{
 			Name: subcommand,
 			Action: func(c *cli.Context) error {
-				cmd := exec.Command(path.Value, strings.Join(os.Args[2:], " "))
+				cmd := exec.Command(path, strings.Join(os.Args[2:], " "))
 				cmd.Stdout = os.Stdout
 				cmd.Stdin = os.Stdin
 				cmd.Stderr = os.Stderr
