@@ -2,13 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -93,6 +96,83 @@ func readTemplateInfo(packageDir string) (*Template, error) {
 	return &template, nil
 }
 
+// https://github.com/akashic-games/akashic-cli-commons/blob/v0.2.5/src/GameConfiguration.ts#L46
+type GameConfiguration struct {
+	Width             int         `json:"width"`
+	Height            int         `json:"height"`
+	Fps               *int        `json:"fps"`
+	Main              *string     `json:"main"`
+	Audio             interface{} `json:"audio"`
+	Assets            interface{} `json:"assets"`
+	GlobalScripts     interface{} `json:"globalScripts"`
+	OperationPlugins  interface{} `json:"operationPlugins"`
+	Environment       interface{} `json:"environment"`
+	ModuleMainScripts interface{} `json:"moduleMainScripts"`
+}
+
+var (
+	isPositiveNumber = func(input string) error {
+		n, err := strconv.Atoi(input)
+		if err != nil {
+			return err
+		} else if n < 0 {
+			return errors.New("The number can not be negative!")
+		}
+		return nil
+	}
+)
+
+func promptBasicParameter(label string, defaultValue int) (int, error) {
+	prompt := promptui.Prompt{
+		Label:    label,
+		Validate: isPositiveNumber,
+		Default:  strconv.Itoa(defaultValue),
+	}
+	result, err := prompt.Run()
+	if err != nil {
+		return 0, err
+	}
+	return strconv.Atoi(result)
+}
+
+func promptBasicParameters(path string) error {
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	var config GameConfiguration
+	err = json.Unmarshal(bytes, &config)
+	if err != nil {
+		return err
+	}
+
+	width, err := promptBasicParameter("width", config.Width)
+	if err != nil {
+		return err
+	}
+	config.Width = width
+
+	height, err := promptBasicParameter("height", config.Height)
+	if err != nil {
+		return err
+	}
+	config.Height = height
+
+	fps, err := promptBasicParameter("fps", *config.Fps)
+	if err != nil {
+		return err
+	}
+	*config.Fps = fps
+
+	bytes, err = json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(path, bytes, 0644)
+}
+
 func generate(pkg string, install bool) error {
 	if install {
 		err := npmInstall(pkg)
@@ -116,7 +196,12 @@ func generate(pkg string, install bool) error {
 		return err
 	}
 
-	return copyFiles(filepath.Join(packageDir, template.Path), current)
+	err = copyFiles(filepath.Join(packageDir, template.Path), current)
+	if err != nil {
+		return err
+	}
+
+	return promptBasicParameters(filepath.Join(current, template.GameJson))
 }
 
 func main() {
