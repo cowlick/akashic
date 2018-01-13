@@ -70,7 +70,7 @@ func copyFiles(targetDir string, outDir string) error {
 				if outPath == outDir {
 					return nil
 				}
-				return os.Mkdir(outPath, os.ModeDir)
+				return os.Mkdir(outPath, info.Mode())
 			}
 
 			return copyFile(path, outPath)
