@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../npm"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cowlick/akashic/npm"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli"
 	"io/ioutil"

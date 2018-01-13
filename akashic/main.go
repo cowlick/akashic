@@ -1,11 +1,11 @@
 package main
 
 import (
-	"../npm"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/blang/semver"
+	"github.com/cowlick/akashic/npm"
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/urfave/cli"
 	"io/ioutil"
