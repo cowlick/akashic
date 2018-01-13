@@ -1,0 +1,10 @@
+language: go
+os:
+  - linux
+install:
+  - go get -t -d -v ./...
+  - go version
+  - go env
+script:
+  - go build -o release/akashic ./akashic
+  - go build -o release/akashic-new ./akashic-new

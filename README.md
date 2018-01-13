@@ -1,5 +1,7 @@
 # Yet another akashic-cli
 
+[![Build Status](https://travis-ci.org/cowlick/akashic.svg?branch=master)](https://travis-ci.org/cowlick/akashic)
+
 ## How to install
 
 Use `go get`:
