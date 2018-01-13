@@ -29,7 +29,7 @@ func Execute(version string) {
 
 	args := os.Args
 	if len(args) > 1 {
-		trySearchSUbCommand(args)
+		trySearchSubCommand(args)
 	}
 
 	rootCmd.SetOutput(os.Stdout)
@@ -43,7 +43,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&version, "version", "v", false, "print the version")
 }
 
-func trySearchSUbCommand(args []string) {
+func trySearchSubCommand(args []string) {
 	subcommand := args[1]
 
 	for _, c := range rootCmd.Commands() {
