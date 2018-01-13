@@ -1,6 +1,7 @@
 package main
 
 import (
+	"../npm"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,8 +9,6 @@ import (
 	"github.com/rhysd/go-github-selfupdate/selfupdate"
 	"github.com/urfave/cli"
 	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -83,24 +82,11 @@ var packages = []string{
 	"@akashic/akashic-cli-stat",
 }
 
-func npmInstall(pkg string, global bool) error {
-	var cmd *exec.Cmd
-	if global {
-		cmd = exec.Command("npm", "i", "-g", pkg)
-	} else {
-		cmd = exec.Command("npm", "i", "-D", pkg)
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func bootstrap(global bool) error {
 
 	for _, pkg := range packages {
 
-		err := npmInstall(pkg, global)
+		err := npm.Install(pkg, global)
 		if err != nil {
 			return err
 		}
@@ -151,10 +137,6 @@ func packageVersion(pkg string) (*CommandPackageInfo, error) {
 	return &CommandPackageInfo{version, path.Type}, nil
 }
 
-type DistTags struct {
-	Latest string `json:"latest"`
-}
-
 func updatePackage() error {
 
 	for _, pkg := range packages {
@@ -164,18 +146,7 @@ func updatePackage() error {
 			return err
 		}
 
-		resp, err := http.Get(fmt.Sprintf("https://registry.npmjs.org/-/package/%s/dist-tags", url.PathEscape(pkg)))
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		jsonData, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-
-		var tags DistTags
-		err = json.Unmarshal(jsonData, &tags)
+		tags, err := npm.GetDistTags(pkg)
 		if err != nil {
 			return err
 		}
@@ -190,7 +161,7 @@ func updatePackage() error {
 			if previous.Type == GLOBAL {
 				global = true
 			}
-			err = npmInstall(pkg, global)
+			err = npm.Install(pkg, global)
 			if err != nil {
 				return err
 			}
@@ -223,7 +194,7 @@ func export(baseName string, args cli.Args) error {
 		return errors.New("Usage: akashic export [format] [options]")
 	}
 
-	path, err := findAkashicCommandPath(baseName, "export-" + args.First())
+	path, err := findAkashicCommandPath(baseName, "export-"+args.First())
 	if err != nil {
 		return err
 	}

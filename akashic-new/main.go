@@ -1,6 +1,7 @@
 package main
 
 import (
+	"../npm"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,26 +10,16 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 )
 
-func npmInstall(pkg string) error {
-	cmd := exec.Command("npm", "i", "-g", pkg)
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func searchPackageDir(pkg string) (string, error) {
-	path, err := exec.Command("npm", "root", "-g").Output()
+	path, err := npm.Root(true)
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(strings.TrimRight(string(path), "\n"), pkg), nil
+	return filepath.Join(path, pkg), nil
 }
 
 func copyFile(from string, to string) error {
@@ -181,7 +172,7 @@ func promptBasicParameters(path string) error {
 
 func generate(pkg string, install bool) error {
 	if install {
-		err := npmInstall(pkg)
+		err := npm.Install(pkg, true)
 		if err != nil {
 			return err
 		}
