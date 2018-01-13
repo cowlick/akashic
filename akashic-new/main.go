@@ -171,7 +171,7 @@ func promptBasicParameters(path string) error {
 	}
 	*config.Fps = fps
 
-	bytes, err = json.Marshal(config)
+	bytes, err = json.MarshalIndent(config, "", "\t")
 	if err != nil {
 		return err
 	}
