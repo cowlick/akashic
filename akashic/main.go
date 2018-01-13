@@ -137,7 +137,7 @@ func packageVersion(pkg string) (*CommandPackageInfo, error) {
 	return &CommandPackageInfo{version, path.Type}, nil
 }
 
-func updatePackage() error {
+func updatePackages() error {
 
 	for _, pkg := range packages {
 
@@ -279,7 +279,7 @@ func main() {
 			Name:  "upgrade",
 			Usage: "Try to update official akashic-cli-*",
 			Action: func(c *cli.Context) error {
-				err := updatePackage()
+				err := updatePackages()
 				if err != nil {
 					fmt.Println(err)
 				}
