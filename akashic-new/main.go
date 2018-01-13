@@ -158,7 +158,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "akashic new"
 	app.Usage = "Generate project skeleton"
-	app.Version = "0.0.1"
+	app.Version = "0.1.0"
 
 	app.ArgsUsage = "[npm package]"
 
