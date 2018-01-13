@@ -159,7 +159,13 @@ func promptBasicParameters(path string) error {
 	}
 	config.Height = height
 
-	fps, err := promptBasicParameter("fps", *config.Fps)
+	var defaultFps int
+	if config.Fps != nil {
+		defaultFps = *config.Fps
+	} else {
+		defaultFps = 30
+	}
+	fps, err := promptBasicParameter("fps", defaultFps)
 	if err != nil {
 		return err
 	}
