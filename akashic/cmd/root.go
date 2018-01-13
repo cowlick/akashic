@@ -54,7 +54,7 @@ func trySearchSUbCommand(args []string) {
 
 	path, err := findAkashicCommandPath(rootCmd.Use, subcommand)
 	if err != nil {
-		exitError(err)
+		return
 	}
 
 	sub := &cobra.Command{
