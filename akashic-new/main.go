@@ -100,14 +100,14 @@ func readTemplateInfo(packageDir string) (*Template, error) {
 type GameConfiguration struct {
 	Width             int         `json:"width"`
 	Height            int         `json:"height"`
-	Fps               *int        `json:"fps"`
-	Main              *string     `json:"main"`
-	Audio             interface{} `json:"audio"`
-	Assets            interface{} `json:"assets"`
-	GlobalScripts     interface{} `json:"globalScripts"`
-	OperationPlugins  interface{} `json:"operationPlugins"`
-	Environment       interface{} `json:"environment"`
-	ModuleMainScripts interface{} `json:"moduleMainScripts"`
+	Fps               *int        `json:"fps,omitempty"`
+	Main              *string     `json:"main,omitempty"`
+	Audio             interface{} `json:"audio,omitempty"`
+	Assets            interface{} `json:"assets,omitempty"`
+	GlobalScripts     interface{} `json:"globalScripts,omitempty"`
+	OperationPlugins  interface{} `json:"operationPlugins,omitempty"`
+	Environment       interface{} `json:"environment,omitempty"`
+	ModuleMainScripts interface{} `json:"moduleMainScripts,omitempty"`
 }
 
 var (
