@@ -9,51 +9,70 @@ import (
 var (
 	VERSION string
 	version bool
-	rootCmd *cobra.Command
 )
+
+var rootCmd = &cobra.Command{
+	Use:  "akashic",
+	Long: "Command-line utility for Akashic Engine",
+	Run: func(cmd *cobra.Command, args []string) {
+		if version {
+			cmd.Println(cmd.Use + " " + VERSION)
+			return
+		}
+		cmd.Help()
+	},
+}
 
 func Execute(version string) {
 
 	VERSION = version
 
+	args := os.Args
+	if len(args) > 1 {
+		trySearchSUbCommand(args)
+	}
+
 	rootCmd.SetOutput(os.Stdout)
 	err := rootCmd.Execute()
 	if err != nil {
-		rootCmd.SetOutput(os.Stderr)
-		rootCmd.Println(err)
-		os.Exit(1)
+		exitError(err)
 	}
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolVarP(&version, "version", "v", false, "print the version")
+}
 
-	rootCmd = &cobra.Command{
-		Use:  "akashic",
-		Long: "Command-line utility for Akashic Engine",
+func trySearchSUbCommand(args []string) {
+	subcommand := args[1]
+
+	for _, c := range rootCmd.Commands() {
+		if c.Use == subcommand {
+			return
+		}
+	}
+
+	path, err := findAkashicCommandPath(rootCmd.Use, subcommand)
+	if err != nil {
+		exitError(err)
+	}
+
+	sub := &cobra.Command{
+		Use:                subcommand,
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if version {
-				cmd.Println(rootCmd.Use + " " + VERSION)
-				return nil
-			}
-
-			if len(args) <= 0 {
-				rootCmd.Help()
-				return nil
-			}
-
-			subcommand := args[0]
-			path, err := findAkashicCommandPath(rootCmd.Use, subcommand)
-			if err != nil {
-				return err
-			}
-
-			c := exec.Command(path, args[1:]...)
+			c := exec.Command(path, args...)
 			c.Stdout = os.Stdout
 			c.Stdin = os.Stdin
 			c.Stderr = os.Stderr
 			return c.Run()
 		},
 	}
+	rootCmd.AddCommand(sub)
+}
 
-	rootCmd.PersistentFlags().BoolVarP(&version, "version", "v", false, "print the version")
+func exitError(err error) {
+	rootCmd.SetOutput(os.Stderr)
+	rootCmd.Println(err)
+	os.Exit(1)
 }
