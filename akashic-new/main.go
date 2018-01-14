@@ -77,5 +77,19 @@ func main() {
 		return err
 	}
 
+	app.Commands = []cli.Command{
+		{
+			Name:  "selfupdate",
+			Usage: "Try to update self via GitHub",
+			Action: func(c *cli.Context) error {
+				err := selfUpdate(app.Version)
+				if err != nil {
+					fmt.Println(err)
+				}
+				return err
+			},
+		},
+	}
+
 	app.Run(os.Args)
 }
