@@ -10,7 +10,7 @@ var selfupdateCmd = &cobra.Command{
 	Use:  "selfupdate",
 	Long: "Try to update self via GitHub",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		previous, err := semver.Parse(VERSION)
+		previous, err := semver.Parse(rootCmd.Version)
 		if err != nil {
 			return err
 		}
@@ -19,7 +19,7 @@ var selfupdateCmd = &cobra.Command{
 			return err
 		}
 		if latest.Version.Equals(previous) {
-			cmd.Println("Current binary is the latest version", version)
+			cmd.Println("Current binary is the latest version", rootCmd.Version)
 		} else {
 			cmd.Println("Successfully updated to version", latest.Version)
 		}

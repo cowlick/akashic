@@ -6,17 +6,14 @@ import (
 	"os/exec"
 )
 
-var (
-	VERSION string
-	version bool
-)
+var version bool
 
 var rootCmd = &cobra.Command{
 	Use:  "akashic",
 	Long: "Command-line utility for Akashic Engine",
 	Run: func(cmd *cobra.Command, args []string) {
 		if version {
-			cmd.Println(cmd.Use + " " + VERSION)
+			cmd.Println(cmd.Use + " " + cmd.Version)
 			return
 		}
 		cmd.Help()
@@ -25,7 +22,7 @@ var rootCmd = &cobra.Command{
 
 func Execute(version string) {
 
-	VERSION = version
+	rootCmd.Version = version
 
 	args := os.Args
 	if len(args) > 1 {
